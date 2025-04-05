@@ -1,9 +1,10 @@
 import * as THREE from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
-import islandVertexShader from './shaders/island/vertex.glsl'
 import GUI from 'lil-gui'
+import islandVertexShader from './shaders/island/vertex.glsl'
 import islandFragmentShader from './shaders/island/fragment.glsl'
-
+import oceanVertexShader from './shaders/ocean/vertex.glsl'
+import oceanFragmentShader from './shaders/ocean/fragment.glsl'
 
 const gui = new GUI({ width: 340 })
 const debugObject = {}
@@ -50,7 +51,7 @@ window.addEventListener('resize', () =>
  */
 // Base camera
 const camera = new THREE.PerspectiveCamera(35, sizes.width / sizes.height, 0.1, 100)
-camera.position.set(0, 0, 12)
+camera.position.set(0, 10, 12)
 scene.add(camera)
 
 // Controls
@@ -70,11 +71,14 @@ renderer.setPixelRatio(sizes.pixelRatio)
 renderer.shadowMap.enabled = true;
 
 
-const vertexCount = 512
+const vertexCount = 1024
 
 const islandImage = textureLoader.load(`./kapiti-${vertexCount}.png`);
+const islandColorImage = textureLoader.load(`./kapiti-img-${vertexCount}.png`);
+
+
 /**
- * Particles
+ * Island
  */
 const islandGeometry = new THREE.PlaneGeometry(10, 10, vertexCount, vertexCount)
 
@@ -85,15 +89,16 @@ const islandMaterial = new THREE.ShaderMaterial({
     uniforms:
     {
         uMap: new THREE.Uniform(islandImage),
-        uSunPositionX: new THREE.Uniform(3),
-        uSunPositionY: new THREE.Uniform(4),
-        uSunPositionZ: new THREE.Uniform(-4),
+        uColor: new THREE.Uniform(islandColorImage),
+        uSunPositionX: new THREE.Uniform(0),
+        uSunPositionY: new THREE.Uniform(10),
+        uSunPositionZ: new THREE.Uniform(0),
         uTexelSizeX: new THREE.Uniform(new THREE.Vector2(1.0 / vertexCount, 1.0 / vertexCount)),
         uDisplacementScale: new THREE.Uniform(1.0)
     }
 })
 const island = new THREE.Mesh(islandGeometry, islandMaterial)    
-island.rotation.x = - Math.PI * 0.5                                                                                                 
+island.rotation.x = - Math.PI * 0.5
 scene.add(island)
 
 gui.add(islandMaterial.uniforms.uSunPositionX, 'value').min(-20).max(20).step(0.1).name('sunPositionX')
@@ -103,30 +108,130 @@ gui.add(islandMaterial.uniforms.uDisplacementScale, 'value').min(0).max(2.0).ste
 
 
 /**
+ * Ocean
+ */
+
+// Color
+debugObject.depthColor = '#186691'
+debugObject.surfaceColor = '#9bd8ff'
+
+const oceanGeometry = new THREE.PlaneGeometry(100, 100, 512, 512)
+const oceanMaterial = new THREE.ShaderMaterial({
+    vertexShader: oceanVertexShader,
+    fragmentShader: oceanFragmentShader,
+    wireframe: true,
+    uniforms:
+    {
+        uBigWavesElevation: {
+            value: 0.01
+        },
+        uBigWavesFrequency: {
+            value: new THREE.Vector2(10, 10)
+        },
+        uTime: {
+            value: 0
+        },
+        uBigWaveSpeed: {
+            value: 1.0
+        },
+        uDepthColor: {
+            value: new THREE.Color(debugObject.depthColor)
+        },
+        uSurfaceColor: {
+            value: new THREE.Color(debugObject.surfaceColor)
+        },
+        uElevationSize: {
+            value: 3.0
+        },
+        uElevationOffset: {
+            value: 0.05
+        },
+        uNoiseMultiplier: {
+            value: 2
+        },
+        uNoiseElevation: {
+            value: 0.02
+        },
+        uTimeScale: {
+            value: 0.05
+        },
+        uNoise: {
+            value: 0.02
+        }
+    }
+})
+const ocean = new THREE.Mesh(oceanGeometry, oceanMaterial)    
+ocean.rotation.x = - Math.PI * 0.5
+scene.add(ocean)
+
+gui.add(oceanMaterial.uniforms.uBigWavesElevation, 'value')
+    .min(0).max(1).step(0.001).name('Elevation')
+gui.add(oceanMaterial.uniforms.uElevationSize, 'value')
+    .min(0).max(10).step(0.001).name('Elevation size')
+gui.add(oceanMaterial.uniforms.uElevationOffset, 'value')
+    .min(0).max(1).step(0.001).name('Elevation offset')
+
+gui.add(oceanMaterial.uniforms.uBigWavesFrequency.value, 'x')
+    .min(0).max(10).step(0.01).name('Frequency X')
+gui.add(oceanMaterial.uniforms.uBigWavesFrequency.value, 'y')
+    .min(0).max(10).step(0.01).name('Frequency Y')
+
+
+gui.add(oceanMaterial.uniforms.uNoiseMultiplier, 'value')
+    .min(1).max(10).step(0.1).name('Noise frequency')
+gui.add(oceanMaterial.uniforms.uNoiseElevation, 'value')
+    .min(0).max(2).step(0.001).name('Noise elevation')
+gui.add(oceanMaterial.uniforms.uTimeScale, 'value')
+    .min(0).max(10).step(0.001).name('Noise timescale')
+gui.add(oceanMaterial.uniforms.uNoise, 'value')
+    .min(2).max(8).step(1).name('Noise iterations')
+
+gui.add(oceanMaterial.uniforms.uBigWaveSpeed, 'value')
+    .min(0).max(10).step(0.01).name('Wave Speed')
+
+gui.addColor(debugObject, 'depthColor')
+    .name('Depth color').onChange(
+        () => oceanMaterial.uniforms.uDepthColor.value.set(debugObject.depthColor)
+    )
+gui.addColor(debugObject, 'surfaceColor')
+    .name('Surface color').onChange(
+        () => oceanMaterial.uniforms.uSurfaceColor.value.set(debugObject.surfaceColor)
+    )
+gui.add(oceanMaterial, 'wireframe')
+    .name('Wireframe');
+
+
+
+/**
  * Light helpders
  */
-// const directionalLightHelper = new THREE.Mesh(
-//     new THREE.PlaneGeometry(),
-//     new THREE.MeshBasicMaterial()
-// )
+const directionalLightHelper = new THREE.Mesh(
+    new THREE.PlaneGeometry(),
+    new THREE.MeshBasicMaterial()
+)
 
-// directionalLightHelper.material.color.setRGB(0.1, 0.1, 1.0)
-// directionalLightHelper.material.side = THREE.DoubleSide
-// scene.add(directionalLightHelper)
+directionalLightHelper.material.color.setRGB(0.1, 0.1, 1.0)
+directionalLightHelper.material.side = THREE.DoubleSide
+directionalLightHelper.rotation.x = - Math.PI * 0.5
+scene.add(directionalLightHelper)
 
-const directionalLight = new THREE.DirectionalLight(new THREE.Color('#FFFFFF'), 1.0)
-directionalLight.position.set(1, 0.25, 0)
-directionalLight.castShadow = true;
-scene.add(directionalLight)
+// const directionalLight = new THREE.DirectionalLight(new THREE.Color('#FFFFFF'), 1.0)
+// directionalLight.position.set(1, 0.25, 0)
+// directionalLight.castShadow = true;
+// scene.add(directionalLight)
 /**
  * Animate                                                                                                                                                                                          
  */
+const clock = new THREE.Clock()
+
 const tick = () =>
 {
     // Update controls
+    const elapsedTime = clock.getElapsedTime()
     controls.update()
 
-    directionalLight.position.set(islandMaterial.uniforms.uSunPositionX.value, islandMaterial.uniforms.uSunPositionY.value, islandMaterial.uniforms.uSunPositionZ.value)
+    oceanMaterial.uniforms.uTime.value = elapsedTime;
+    directionalLightHelper.position.set(islandMaterial.uniforms.uSunPositionX.value, islandMaterial.uniforms.uSunPositionY.value, islandMaterial.uniforms.uSunPositionZ.value)
 
     // Render
     renderer.render(scene, camera)

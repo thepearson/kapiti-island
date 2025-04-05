@@ -1,4 +1,5 @@
 uniform sampler2D uMap;
+uniform sampler2D uColor;
 
 uniform float uSunPositionX;
 uniform float uSunPositionY;
@@ -13,23 +14,33 @@ varying vec3 vPosition;
 
 void main()
 {
-    vec3 color = vec3(1.0);
+    vec4 texColor = texture(uColor, vUv);
+    vec3 color = texColor.rgb;
+
+    if (texColor.a == 0.0) {
+        discard;
+    }
+    
+
     vec3 normal = normalize(vNormal);
-    vec3 viewDirection = normalize(-vPosition);
+    vec3 viewDirection = normalize(vPosition - cameraPosition);
 
-    vec3 lights = vec3(0.0);
-    lights += ambientLight(vec3(0.5, 0.5, 0.7), 0.2);
-    lights += directionalLight(
-        vec3(1.0, 1.0, 0.8),
-        500.,
-        vNormal,
-        vec3(uSunPositionX, uSunPositionY, uSunPositionZ),
-        viewDirection,
-        16.0
-    );
+    // vec3 lights = vec3(0.0);
+    //lights += ambientLight(vec3(0.5, 0.5, 0.5), 1.0);
+    // lights += directionalLight(
+    //     vec3(1.0, 1.0, 1.0),    // Light color
+    //     10.0,                    // Light intensity
+    //     normal,                 // normal
+    //     vec3(uSunPositionX, uSunPositionY, uSunPositionZ),    // position
+    //     viewDirection,          // View direction
+    //     2.0                    // Specular Power
+    // );
 
-    color *= lights;
+    //color *= lights;
 
     gl_FragColor = vec4(color, 1.0);
+
+    #include <tonemapping_fragment>
+    #include <colorspace_fragment>
 
 }
