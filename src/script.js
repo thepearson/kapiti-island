@@ -148,7 +148,7 @@ const oceanMaterial = new THREE.ShaderMaterial({
             value: 0
         },
         uBigWaveSpeed: {
-            value: 1.0
+            value: 0
         },
         uDepthColor: {
             value: new THREE.Color(debugObject.depthColor)
@@ -157,10 +157,10 @@ const oceanMaterial = new THREE.ShaderMaterial({
             value: new THREE.Color(debugObject.surfaceColor)
         },
         uElevationSize: {
-            value: 3.0
+            value: 2.23
         },
         uElevationOffset: {
-            value: 0.05
+            value: 0.1
         },
         uNoiseMultiplier: {
             value: 10
