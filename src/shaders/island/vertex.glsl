@@ -11,16 +11,23 @@ varying vec3 vPosition;
 void main()
 {
 
-    float displacement = texture(uMap, uv).r; // Read height from texture
+    vec4 map = texture(uMap, uv); // Read height from texture
+    float displacement = map.r;
+
     vec3 lPosition = position;
+
+    // float view = 1.0;
+    // if (map.a == 0.0) {
+    //     //view = -2.0;
+    // }
 
     lPosition.z += displacement * uDisplacementScale;
 
     // Position
     vec4 modelPosition = modelMatrix * vec4(lPosition, 1.0);
 
-    
-    gl_Position = projectionMatrix * viewMatrix * modelPosition;
+    vec4 finalPosition = projectionMatrix * viewMatrix * modelPosition;
+    gl_Position = finalPosition; //vec4(finalPosition.xyz, 1.0);
 
     // Transform the normal based on the model, as it can rotate
     vec4 modelNormal = modelMatrix * vec4(normal, 0.0);

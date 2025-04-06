@@ -17,6 +17,7 @@ void main()
     vec4 texColor = texture(uColor, vUv);
     vec3 color = texColor.rgb;
 
+    float alpha = 1.0;
     if (texColor.a == 0.0) {
         discard;
     }
@@ -38,9 +39,9 @@ void main()
 
     //color *= lights;
 
-    gl_FragColor = vec4(color, 1.0);
+    gl_FragColor = vec4(color, alpha);
 
-    #include <tonemapping_fragment>
-    #include <colorspace_fragment>
+    // #include <tonemapping_fragment>
+    // #include <colorspace_fragment>
 
 }

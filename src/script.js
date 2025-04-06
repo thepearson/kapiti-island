@@ -18,6 +18,9 @@ const canvas = document.querySelector('canvas.webgl')
 // Scene
 const scene = new THREE.Scene()
 
+// Fog
+scene.fog = new THREE.Fog( 0x9bd8ff, 50, 60);
+
 // Loaders
 const textureLoader = new THREE.TextureLoader()
 
@@ -51,7 +54,7 @@ window.addEventListener('resize', () =>
  */
 // Base camera
 const camera = new THREE.PerspectiveCamera(35, sizes.width / sizes.height, 0.1, 100)
-camera.position.set(0, 10, 12)
+camera.position.set(6, 1, 14)
 scene.add(camera)
 
 // Controls
@@ -65,7 +68,7 @@ const renderer = new THREE.WebGLRenderer({
     canvas: canvas,
     antialias: true
 })
-renderer.setClearColor('#181818')
+renderer.setClearColor('#9bd8ff')
 renderer.setSize(sizes.width, sizes.height)
 renderer.setPixelRatio(sizes.pixelRatio)
 renderer.shadowMap.enabled = true;
@@ -85,6 +88,9 @@ const islandGeometry = new THREE.PlaneGeometry(10, 10, vertexCount, vertexCount)
 const islandMaterial = new THREE.ShaderMaterial({
     vertexShader: islandVertexShader,
     fragmentShader: islandFragmentShader,
+    transparent: true,
+    side: THREE.DoubleSide,
+    //fog: true,
     //wireframe: true,
     uniforms:
     {
@@ -115,18 +121,28 @@ gui.add(islandMaterial.uniforms.uDisplacementScale, 'value').min(0).max(2.0).ste
 debugObject.depthColor = '#186691'
 debugObject.surfaceColor = '#9bd8ff'
 
-const oceanGeometry = new THREE.PlaneGeometry(100, 100, 512, 512)
+const oceanGeometryLarge = new THREE.PlaneGeometry(5000, 5000, 4, 4)
+const oceanMaterialLarge = new THREE.MeshBasicMaterial({
+    color: new THREE.Color('#062951')
+})
+const oceanMeshLarge = new THREE.Mesh(oceanGeometryLarge, oceanMaterialLarge);
+oceanMeshLarge.rotation.x = - Math.PI * 0.5
+oceanMeshLarge.position.y -= 0.2;
+scene.add(oceanMeshLarge);
+
+const oceanGeometry = new THREE.PlaneGeometry(50, 50, 512, 512)
 const oceanMaterial = new THREE.ShaderMaterial({
     vertexShader: oceanVertexShader,
     fragmentShader: oceanFragmentShader,
-    wireframe: true,
+    //fog: true,
+    //wireframe: true,
     uniforms:
     {
         uBigWavesElevation: {
             value: 0.01
         },
         uBigWavesFrequency: {
-            value: new THREE.Vector2(10, 10)
+            value: new THREE.Vector2(0, 0)
         },
         uTime: {
             value: 0
@@ -147,7 +163,7 @@ const oceanMaterial = new THREE.ShaderMaterial({
             value: 0.05
         },
         uNoiseMultiplier: {
-            value: 2
+            value: 10
         },
         uNoiseElevation: {
             value: 0.02
@@ -156,12 +172,13 @@ const oceanMaterial = new THREE.ShaderMaterial({
             value: 0.05
         },
         uNoise: {
-            value: 0.02
+            value: 8.0
         }
     }
 })
 const ocean = new THREE.Mesh(oceanGeometry, oceanMaterial)    
 ocean.rotation.x = - Math.PI * 0.5
+ocean.position.y -= 0.01;
 scene.add(ocean)
 
 gui.add(oceanMaterial.uniforms.uBigWavesElevation, 'value')
